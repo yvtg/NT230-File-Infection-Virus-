@@ -1,0 +1,23 @@
+# Visual Studio
+/.vs/
+/Debug/
+/Release/
+*.vcxproj.user
+
+# Build outputs
+/bin/
+*.exe
+*.dll
+*.obj
+*.lib
+*.pdb
+*.iobj
+*.ipdb
+
+# Build system
+*.bat
+nul
+
+# OS specific
+Thumbs.db
+.DS_Store

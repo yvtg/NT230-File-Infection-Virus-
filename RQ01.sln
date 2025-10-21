@@ -1,0 +1,28 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29905.134
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NT230_EPO_Virus", "NT230_EPO_Virus.vcxproj", "{12345678-1234-1234-1234-123456789012}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NT230_HostProgram", "NT230_HostProgram.vcxproj", "{87654321-4321-4321-4321-210987654321}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{12345678-1234-1234-1234-123456789012}.Debug|Win32.ActiveCfg = Debug|Win32
+		{12345678-1234-1234-1234-123456789012}.Debug|Win32.Build.0 = Debug|Win32
+		{12345678-1234-1234-1234-123456789012}.Release|Win32.ActiveCfg = Release|Win32
+		{12345678-1234-1234-1234-123456789012}.Release|Win32.Build.0 = Release|Win32
+		{87654321-4321-4321-4321-210987654321}.Debug|Win32.ActiveCfg = Debug|Win32
+		{87654321-4321-4321-4321-210987654321}.Debug|Win32.Build.0 = Debug|Win32
+		{87654321-4321-4321-4321-210987654321}.Release|Win32.ActiveCfg = Release|Win32
+		{87654321-4321-4321-4321-210987654321}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ABCDEF01-2345-6789-ABCD-EF0123456789}
+	EndGlobalSection
+EndGlobal
