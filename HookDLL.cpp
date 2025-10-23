@@ -1,12 +1,13 @@
 #include <windows.h>
 #include <iostream>
 
+// KHAI BÁO CON TRỎ HÀM
 typedef BOOL(WINAPI* WriteFile_t)(HANDLE, LPCVOID, DWORD, LPDWORD, LPOVERLAPPED);
 WriteFile_t OriginalWriteFile = NULL;
 
 // Hàm Hook
 BOOL WINAPI HookedWriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped) {
-    MessageBoxA(NULL, "23521828_23521761_23521308_23521840", "Infection by NT230", MB_OK);
+    MessageBoxA(NULL, "23521840_23521761_23521308_23521828", "Infection by NT230", MB_OK);
     return OriginalWriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
 }
 
